@@ -1,0 +1,34 @@
+{
+  "name": "ticketing-system",
+  "version": "1.0.0",
+  "description": "Node Ticketing System backend API",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "env-cmd -f ./config/dev.env nodemon src/index.js",
+    "test": "env-cmd -f ./config/test.env jest --watch --runInBand"
+  },
+  "author": "Jeremy Berkhemer",
+  "license": "ISC",
+  "devDependencies": {
+    "env-cmd": "^9.0.3",
+    "jest": "^24.8.0",
+    "nodemon": "^1.19.1",
+    "supertest": "^4.0.2"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.6.8",
+    "multer": "^1.4.2",
+    "sharp": "^0.23.0",
+    "validator": "^11.1.0"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  }
+}
