@@ -4,25 +4,19 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
 const userSchema = new mongoose.Schema({
-    name: {
+    fName: {
         type: String,
         required: true,
         trim: true
     },
-    password: {
+    lName: {
         type: String,
         required: true,
-        minlength: 8,
-        trim: true,
-        validate(val){
-            var hasUpperCase = /[A-Z]/.test(val)
-            var hasLowerCase = /[a-z]/.test(val)
-            var hasNumbers = /\d/.test(val)
-            var hasNonalphas = /\W/.test(val)
-            if (hasUpperCase + hasLowerCase + hasNumbers + hasNonalphas < 3 || val.toLowerCase().includes('password')){
-                throw new Error('Password does not meet complexity requirements.')
-            }
-        }
+        trim: true
+    },
+    userName: {
+        type: String,
+        trim: true
     },
     email: {
         type: String,
@@ -33,6 +27,24 @@ const userSchema = new mongoose.Schema({
         validate(val){
             if(!validator.isEmail(val)){
                 throw new Error('Please enter a valid email!')
+            }
+        }
+    },
+    phoneNumber: {
+        type: String,
+        trim: true
+    },
+    password: {
+        type: String,
+        minlength: 8,
+        trim: true,
+        validate(val){
+            var hasUpperCase = /[A-Z]/.test(val)
+            var hasLowerCase = /[a-z]/.test(val)
+            var hasNumbers = /\d/.test(val)
+            var hasNonalphas = /\W/.test(val)
+            if (hasUpperCase + hasLowerCase + hasNumbers + hasNonalphas < 3 || val.toLowerCase().includes('password')){
+                throw new Error('Password does not meet complexity requirements.')
             }
         }
     },
@@ -60,21 +72,28 @@ const userSchema = new mongoose.Schema({
             default: 1
         }
     },
-    clientID: {
-        type: mongoose.Schema.Types.ObjectId
+    companyID: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company'
     }
 }, {
     timestamps: true
 })
 
-userSchema.virtual('tickets', {
+userSchema.virtual('assignedTickets', {
     ref: 'Ticket',
     localField: '_id',
     foreignField: 'owner'
 })
 
-userSchema.statics.findByCredentials = async (email,password) => {
-    const user = await User.findOne({ email })
+userSchema.virtual('clientTickets', {
+    ref: 'Ticket',
+    localField: '_id',
+    foreignField: 'clientID'
+})
+
+userSchema.statics.findByCredentials = async (userName,password) => {
+    const user = await User.findOne({ userName })
 
     if(!user){
         throw new Error('User not found')

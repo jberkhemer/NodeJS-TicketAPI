@@ -84,15 +84,6 @@ userRoutes.patch('/users/me', auth, async (req,res) => { //Update user profile
         res.status(500).send()
     }
 })
-// userRoutes.delete('/users/me', auth, async (req,res) => { // Delete user profile and all associated tasks
-//     try{
-//         req.user.remove()
-//         emailUser.sendCancel(req.user.email, req.user.name)
-//         res.send(req.user)
-//     } catch (e) {
-//         res.status(500).send()
-//     }
-// })
 userRoutes.post('/users/me/avatar', auth, avatar.single('avatar'), async (req, res) => { // Upload user avatar
     const buffer = await sharp(req.file.buffer).resize({ width: 250, height: 250 }).png().toBuffer()
     req.user.avatar = buffer

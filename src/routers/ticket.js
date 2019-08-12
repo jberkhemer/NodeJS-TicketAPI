@@ -28,12 +28,12 @@ ticketRouter.get('/ticket/:id', auth, async (req,res) => { // Get single ticket
     }
 })
 ticketRouter.get('/mytickets', auth, async (req,res) => { // Get all tickets assigned to currently logged in user
-    const match = {}
+    // const match = {}
     const sort = {}
 
-    if(req.query.completed){
-        match.completed = req.query.completed === 'true'
-    }
+    // if(req.query.completed){
+    //     match.completed = req.query.completed === 'true'
+    // }
     
     if(req.query.sortBy){
         const parts = req.query.sortBy.split(':')
@@ -42,14 +42,14 @@ ticketRouter.get('/mytickets', auth, async (req,res) => { // Get all tickets ass
 
     try {
         await req.user.populate({
-            path: 'tickets',
+            path: 'assignedTickets',
             options: {
                 limit: parseInt(req.query.limit) || 10,
                 skip: (parseInt(req.query.page)-1)*parseInt(req.query.limit) || (parseInt(req.query.page)-1)*10,
                 sort
             }
         }).execPopulate()
-        res.send(req.user.tickets)
+        res.send(req.user.assignedTickets)
     } catch (e) {
         res.status(500).send({error: e})
     }
@@ -79,7 +79,7 @@ ticketRouter.patch('/ticket/:id/assign', auth, async (req,res) => {
         await ticket.save()
         res.send(ticket)
     } catch (e) {
-
+        res.status(500).send({ error: e })
     }
 })
 ticketRouter.post('/ticket/:id/note', auth, async (req,res) => {

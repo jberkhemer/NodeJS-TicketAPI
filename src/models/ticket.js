@@ -17,17 +17,20 @@ const ticketSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    completed: {
-        type: Boolean,
-        default: false
+    ticketType: {
+        type: mongoose.Schema.Types.ObjectId
     },
     owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
-    client: {
+    clientID: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Client'
+        ref: 'User'
+    },
+    companyID: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company'
     },
     timelogs: [{
         startTime: {
@@ -62,6 +65,10 @@ const ticketSchema = new mongoose.Schema({
     },
     closed: {
         type: Date
+    },
+    completed: {
+        type: Boolean,
+        default: false
     },
     removed: {
         type: Boolean,
@@ -99,7 +106,7 @@ ticketSchema.statics.findTickets = async (user, showCompleted=false, showRemoved
             const tickets = await Ticket.find({ removed: false, client: user._id })
             return tickets
         } else {
-            const tickets = await Ticket.find({ completed: false, removed: false, client: user._id })
+            const tickets = await Ticket.find({ completed: false, removed: false, clientID: user._id })
             return tickets
         }
     }
