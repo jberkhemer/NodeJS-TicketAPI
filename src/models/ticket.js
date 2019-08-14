@@ -20,6 +20,22 @@ const ticketSchema = new mongoose.Schema({
     ticketType: {
         type: mongoose.Schema.Types.ObjectId
     },
+    status: {
+        type: String,
+        required: true,
+        default: 'New'
+        /********
+         * 
+         * Statuses:
+         * New
+         * Assigned
+         * In Progress
+         * Awaiting Response
+         * Customer Updated
+         * Closed
+         * 
+         ********/
+    },
     owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
@@ -66,10 +82,6 @@ const ticketSchema = new mongoose.Schema({
     closed: {
         type: Date
     },
-    completed: {
-        type: Boolean,
-        default: false
-    },
     removed: {
         type: Boolean,
         default: false
@@ -78,50 +90,68 @@ const ticketSchema = new mongoose.Schema({
     timestamps: true
 })
 
-ticketSchema.statics.findTickets = async (user, showCompleted=false, showRemoved=false) => {
-    if(user.auth.level===0){
-        if(showCompleted===true&&showRemoved===true){
-            const tickets = await Ticket.find()
-            return tickets
-        } else if(showCompleted===true){
-            const tickets = await Ticket.find({ removed: false })
-            return tickets
-        } else if(showRemoved===true){
-            const tickets = await Ticket.find({ completed: false })
-            return tickets
-        } else {
-            const tickets = await Ticket.find({ completed: false, removed: false })
-            return tickets
+ticketSchema.statics.getTimeLogged = (ticket) => {
+    var time = 0
+
+    if(ticket.timelogs.length>0){
+        ticket.timelogs.forEach(log => {
+            if(log.endTime){
+                time += ((new Date(log.endTime) - new Date(log.startTime))/1000)
+            }
+        })
+    }
+
+    return time
+}
+
+ticketSchema.statics.ticketQuery = async (user,query) => {
+    try{
+        const authLevel = user.auth.level
+        if(authLevel===2){
+            query.companyID=user.companyID
+            query.clientID=user._id
+            delete query.user
+            delete query.ticketType
         }
-    } else if(user.auth.level===1) {
-        if(showCompleted==true){
-            const tickets = await Ticket.find({ removed: false })
-            return tickets
-        } else{
-            const tickets = await Ticket.find({ completed: false, removed: false })
-            return tickets
-        }
-    } else {
-        if(showCompleted==true){
-            const tickets = await Ticket.find({ removed: false, client: user._id })
-            return tickets
-        } else {
-            const tickets = await Ticket.find({ completed: false, removed: false, clientID: user._id })
-            return tickets
-        }
+        query.authLevel = authLevel
+        const tickets = await Ticket.find(query)
+        return tickets
+    } catch(e) {
+        return e
     }
 }
 
-ticketSchema.pre('save', async function (next){
+ticketSchema.pre('save', async function (next) {
     const ticket = this
     if(ticket.isNew){
         ticket.ticketNumber = await Ticket.countDocuments()+1
     }
 
-    if(ticket.completed==true){
+    if(ticket.status=='Closed'){
         ticket.closed = new Date()
     }
 
+    next()
+})
+
+ticketSchema.pre('find', function(next) {
+    try{
+        const authLevel = this._conditions.authLevel
+        if(authLevel===undefined){
+            next(new Error('Unauthorized access attempted!'))
+        }
+        if(authLevel!=0) {
+            this._conditions.removed = false
+        }
+        delete this._conditions.authLevel
+        next()
+    } catch (e) {
+        next(e)
+    }
+})
+
+ticketSchema.post('find', function(error, doc, next) {
+    console.log(error,doc)
     next()
 })
 

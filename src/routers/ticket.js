@@ -5,7 +5,32 @@ const ticketRouter = new express.Router()
 
 ticketRouter.get('/ticket', auth, async (req,res) => {
     try {
-        const tickets = await Ticket.findTickets(req.user,req.body.completed,req.body.removed)
+        const query = {}
+
+        if(req.query.status){
+            query.status = {$in: req.query.status.split('+')}
+        }
+        if(req.query.deleted){
+            query.removed = req.query.deleted === 'true'
+        }
+        if(req.query.companies){
+            query.companyID = {$in: req.query.companies.split('+')}
+        }
+        if(req.query.client){
+            query.clientID = {$in: req.query.clients.split('+')}
+        }
+        if(req.query.user){
+            if(req.query.user.toLowerCase()=='me'){
+                query.owner = req.user._id
+            } else {
+                query.owner = {$in: req.query.users.split('+')}
+            }
+        }
+        if(req.query.tickettype){
+            query.ticketType = {$in: req.query.tickettype.split('+')}
+        }
+
+        const tickets = await Ticket.ticketQuery(req.user, query)
 
         if(!tickets){
             res.send({ message: 'Great job! There\'s no tickets!' })
@@ -23,33 +48,6 @@ ticketRouter.get('/ticket/:id', auth, async (req,res) => { // Get single ticket
             return res.status(404).send({ error: 'User not found' })
         }
         res.send(ticket)
-    } catch (e) {
-        res.status(500).send({error: e})
-    }
-})
-ticketRouter.get('/mytickets', auth, async (req,res) => { // Get all tickets assigned to currently logged in user
-    // const match = {}
-    const sort = {}
-
-    // if(req.query.completed){
-    //     match.completed = req.query.completed === 'true'
-    // }
-    
-    if(req.query.sortBy){
-        const parts = req.query.sortBy.split(':')
-        sort[parts[0]] = parts[1] === 'desc' ? -1 : 1
-    }
-
-    try {
-        await req.user.populate({
-            path: 'assignedTickets',
-            options: {
-                limit: parseInt(req.query.limit) || 10,
-                skip: (parseInt(req.query.page)-1)*parseInt(req.query.limit) || (parseInt(req.query.page)-1)*10,
-                sort
-            }
-        }).execPopulate()
-        res.send(req.user.assignedTickets)
     } catch (e) {
         res.status(500).send({error: e})
     }
@@ -72,7 +70,7 @@ ticketRouter.patch('/ticket/:id/assign', auth, async (req,res) => {
         const ticket = await Ticket.findOne({ ticketNumber: req.params.id })
 
         if(!ticket){
-            return res.status(404).send ({ error: 'Ticket not found' })
+            return res.status(404).send({ error: 'Ticket not found' })
         }
         
         ticket.owner = req.body.userID
@@ -119,7 +117,7 @@ ticketRouter.post('/ticket/:id/time', auth, async (req,res) => {
         const ticket = await Ticket.findOne({ ticketNumber: req.params.id })
         const ticketNumber = parseInt(req.params.id)
         if(!ticket){
-            return res.status(404).send({ error: 'User not found' })
+            return res.status(404).send({ error: 'Ticket not found' })
         }
 
         if(req.user.ticketTimer===ticketNumber){
