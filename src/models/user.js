@@ -140,7 +140,10 @@ userSchema.methods.toJSON = function () {
     delete user.password
     delete user.tokens
     delete user.avatar
-    delete user.authLevel
+    delete user.auth
+    delete user.createdAt
+    delete user.updatedAt
+    delete user.__v
 
     return user
 }

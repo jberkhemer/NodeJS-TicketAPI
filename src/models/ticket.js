@@ -137,9 +137,6 @@ ticketSchema.pre('save', async function (next) {
 ticketSchema.pre('find', function(next) {
     try{
         const authLevel = this._conditions.authLevel
-        if(authLevel===undefined){
-            next(new Error('Unauthorized access attempted!'))
-        }
         if(authLevel!=0) {
             this._conditions.removed = false
         }
@@ -154,6 +151,17 @@ ticketSchema.post('find', function(error, doc, next) {
     console.log(error,doc)
     next()
 })
+
+ticketSchema.methods.toJSON = function () {
+    const ticket = this.toObject()
+    delete ticket.createdAt
+    delete ticket.updatedAt
+    delete ticket.__v
+    delete ticket.removed
+    delete ticket._id
+
+    return ticket
+}
 
 const Ticket = mongoose.model('Ticket',ticketSchema)
 

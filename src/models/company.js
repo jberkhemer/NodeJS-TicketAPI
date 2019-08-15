@@ -31,6 +31,15 @@ companySchema.virtual('employees', {
     foreignField: 'companyID'
 })
 
+companySchema.methods.toJSON = function () {
+    const company = this.toObject()
+    delete company.createdAt
+    delete company.updatedAt
+    delete company.__v
+
+    return company
+}
+
 const Company = mongoose.model('Company', companySchema)
 
 module.exports = Company
